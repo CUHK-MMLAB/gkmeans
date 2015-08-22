@@ -1,20 +1,33 @@
-cmake_minimum_required(VERSION 3.2)
+cmake_minimum_required(VERSION 2.8)
 project(GKMeans)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/CMake")
 
 ## Compiler settings
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -Wno-sign-compare")
+
 
 #----------------------
 #   Dependencies
 #----------------------
 
+
+# pthread for cxx11 thread support
+FIND_PACKAGE(Threads )
+list(APPEND LIBRARIES ${CMAKE_THREAD_LIBS_INIT})
+
+# Glog for logging
 FIND_PACKAGE(Glog REQUIRED)
 include_directories(SYSTEM ${GLOG_INCLUDE_DIRS})
 list(APPEND LIBRARIES ${GLOG_LIBRARIES})
 
+# HDF5 for data access
+FIND_PACKAGE(HDF5 REQUIRED COMPONENTS CXX)
+include_directories(SYSTEM ${HDF5_INLCUDE_DIRS})
+list(APPEND LIBRARIES ${HDF5_LIBRARIES})
+
+# CUDA
 FIND_PACKAGE(CUDA REQUIRED)
 if (CUDA_FOUND)
     message(STATUS "CUDA Version: " ${CUDA_VERSION_STRINGS})
@@ -34,13 +47,20 @@ include_directories(include)
 cuda_include_directories(include)
 set(SRC_DIR src/gkmeans)
 set(TEST_SRC_DIR src/tests)
+set(INIH_DIR inih)
+
+# inih library
+include_directories(SYSTEM ${INIH_DIR}/cpp)
 
 #----------------------
 #   Library
 #----------------------
 FILE(GLOB SRC_FILES ${SRC_DIR}/*.cpp
                     ${SRC_DIR}/utils/*.cpp
-                    ${SRC_DIR}/functions/*.cpp)
+                    ${SRC_DIR}/functions/*.cpp
+                    ${SRC_DIR}/data_providers/*.cpp
+                    ${INIH_DIR}/cpp/*.cpp
+                    ${INIH_DIR}/*.c)
 
 FILE(GLOB CU_SRC_FILES ${SRC_DIR}/*.cu
                        ${SRC_DIR}/utils/*.cu)
@@ -59,6 +79,8 @@ target_link_libraries(gkmeans ${LIBRARIES} gkl)
 #----------------------
 #   TEST
 #----------------------
+
+# We use GTest as the testing framework
 FIND_PACKAGE(GTest REQUIRED)
 
 include_directories(${GTEST_INCLUDE_DIRS})

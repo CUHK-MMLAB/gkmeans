@@ -15,7 +15,8 @@ namespace gkmeans{
     typedef TypeParam Dtype;
   protected:
     GKTest() {
-      cudaSetDevice(2);
+      GKMeans::set_config("device_id", "2");
+      gkmeans::GlobalInit();
     }
     virtual ~GKTest() {}
   };

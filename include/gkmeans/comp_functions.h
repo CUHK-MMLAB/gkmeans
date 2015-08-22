@@ -62,14 +62,16 @@ namespace gkmeans{
      * @brief inputs 2 mats
      * 1. X
      * 2. Assignment matrix, DI
+     * 3. A one item matrix holding the number of clusters
      */
-    inline virtual const int NumInputs(){return 2;}
+    inline virtual const int NumInputs(){return 3;}
 
     /**
      * @brief outputs 1 mats
      * 1. Accumulated cluster centers, Y'
+     * 2. label frequency
      */
-    inline virtual const int NumOutputs(){return 1;}
+    inline virtual const int NumOutputs(){return 2;}
 
     inline virtual const char* FunctionType(){return "CenterOfMass";}
 
@@ -77,8 +79,28 @@ namespace gkmeans{
 
     virtual void Execute(const vector<Mat<Dtype> *>& input_mat_vec, const vector<Mat<Dtype> *>& output_mat_vec, cudaStream_t stream);
 
+    void kernelExecute(const vector<Mat<Dtype> *>& input_mat_vec, const vector<Mat<Dtype> *>& output_mat_vec, cudaStream_t stream);
+
+    virtual void SetTrailingMode(size_t trailing_size){
+      trailing_m_ = trailing_size;
+    }
+
+    virtual void UnsetTrailingMode(){
+      trailing_m_ = 0;
+    }
+
   protected:
-    shared_ptr<Mat<Dtype>> buffer_temp_center_;
+
+    size_t m_, n_, k_;
+
+    /**
+     * These two buffer holds the local aggregate.
+     * Accumulating them to the global aggregate afterwards improves the numerical stability.
+     */
+    shared_ptr<Mat<Dtype> > buffer_y_, buffer_isum_;
+
+    size_t trailing_m_;
+
   };
 }
 

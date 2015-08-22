@@ -14,6 +14,8 @@
 #include <set>
 #include <utility>
 #include <algorithm>
+#include <thread>
+#include <random>
 
 //include CUDA libraries
 #include <cublas_v2.h>
@@ -22,6 +24,9 @@
 #include <curand.h>
 #include <cusparse.h>
 
+//thrust
+#include <thrust/device_vector.h>
+
 //glog for logging
 #include <glog/logging.h>
 
@@ -29,6 +34,7 @@
 #include <memory>
 
 using std::shared_ptr;
+using std::unique_ptr;
 using std::pair;
 using std::vector;
 using std::printf;
@@ -38,8 +44,12 @@ using std::ofstream;
 using std::map;
 using std::make_pair;
 using std::set;
+using std::string;
 
 namespace gkmeans {
+
+  void GlobalInit();
+
   //common code here
   class GKMeans{
 
@@ -66,17 +76,28 @@ namespace gkmeans {
     inline static cusparseHandle_t cusparse_handle(){return Get().cusparse_handle_;}
     inline static cudaStream_t stream(int i){return Get().cuda_streams_[i];}
     inline static const vector<cudaStream_t>& stream_vec(){return Get().cuda_streams_;}
+    inline static cusparseMatDescr_t cusparse_descriptor(){return Get().cusparse_descriptor_;}
+
+    inline static string get_config(string key){return Get().configs_[key];}
+    inline static void set_config(string key, string value){ Get().configs_[key] = value;}
+
+    inline static void InitDevice(){Get().initDevice();}
+
 
   protected:
+
+    void initDevice();
+
     cublasHandle_t cublas_handle_;
     curandGenerator_t curand_generator_;
     cusparseHandle_t cusparse_handle_;
     vector<cudaStream_t> cuda_streams_;
+    cusparseMatDescr_t cusparse_descriptor_;
 
     Phase phase_;
+    map<string, string> configs_;
 
     static shared_ptr<GKMeans> singleton_;
-
 
   private:
     //disable copy and sign constructor
@@ -98,6 +119,9 @@ namespace gkmeans {
 #define INSTANTIATE_CLASS(classname) \
   char gChar##classname; \
   template class classname<float>
+
+#define NOT_IMPLEMENTED \
+  LOG(FATAL)<<"operation not implemented!"
 
 #define GKMEANS_COMMON_H
 

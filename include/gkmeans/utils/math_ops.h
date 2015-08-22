@@ -48,6 +48,36 @@ namespace gkmeans {
   template <typename Dtype>
   void gk_rmin(const int M, const int N, const Dtype* data, int* max_idx, Dtype* max_val, cudaStream_t stream);
 
+  /** sparse matrix multiplication, used for updating cluster center */
+  template <typename Dtype>
+  void gk_sparse_gemm2(const cusparseOperation_t TransA, const cusparseOperation_t TransB,
+                       const int M, const int N, const int K, const int NNZ,
+                       const Dtype alpha, const Dtype* dataA, const int* rowPtrA, const int *colIdxA,
+                       const Dtype* B, const Dtype beta, Dtype* C, cudaStream_t stream);
+
+  /** indexed sum **/
+  template <typename Dtype>
+  void gk_isum(const int M, const int N, const int K, const Dtype* X, const int* DI,
+               Dtype* Y, Dtype* ISum, cudaStream_t stream);
+
+  /**broadcasted division*/
+  template <typename Dtype>
+  void gk_bdiv(const int N, const int K, const Dtype* Y, const Dtype* DI, Dtype* dst, cudaStream_t stream);
+
+
+  template <typename Dtype>
+  void gk_csr2csc(const int M, const int N, const int NNZ,
+                  const Dtype* csrData, const int * csrRowPtr, const int* csrColInd,
+                  Dtype* cscData, int* cscRowInd, int* cscColPtr, cudaStream_t stream);
+
+  template<typename Dtype>
+  void gk_gpu_set(const size_t Count, Dtype* data, int val, cudaStream_t stream){
+    if (val == 0){
+      CUDA_CHECK(cudaMemsetAsync(data, 0, Count*sizeof(Dtype), stream));
+    }else{
+      NOT_IMPLEMENTED;
+    }
+  }
 }
 
 #endif //GKMEANS_MATH_OPS_H
